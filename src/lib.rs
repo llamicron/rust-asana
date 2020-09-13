@@ -4,7 +4,7 @@ extern crate reqwest;
 
 
 pub mod api;
-pub mod error;
+pub mod resources;
 
 // pub type Result<T> = std::result::Result<T, error::Error>;
 
