@@ -1,6 +1,7 @@
 /// Interact with the Asana API
 
-use reqwest::blocking::{Client, Response};
+use reqwest::blocking::{Client};
+use crate::schema::{AsanaResponse, AsanaResponseWrapper};
 
 type AccessToken = String;
 
@@ -30,11 +31,16 @@ impl API {
     }
 
     /// Just makes a get request with the PAT and returns the result
-    pub fn get<S: AsRef<str>>(&self, url: S) -> Result<Response, reqwest::Error> {
-        self.client
+    pub fn get<S: AsRef<str>>(&self, url: S) -> Result<AsanaResponse, reqwest::Error> {
+        let resp = self.client
             .get(url.as_ref())
             .bearer_auth(&self.pat)
-            .send()
+            .send()?;
+        
+        // This isn't working :(
+        let text = resp.text()?;
+        let asana_resp = serde_json::from_str::<AsanaResponseWrapper>(&text).expect("Couldn't get asana resp");
+        Ok(asana_resp.data)
     }
 }
 
@@ -51,28 +57,15 @@ mod tests {
     }
 
     #[test]
-    fn test_get_request() {
-        let api = API::from_token("token");
-        let resp = api.get("https://postman-echo.com/get/").unwrap();
-        assert_eq!(resp.status(), 200);
-        assert!(resp.text().unwrap().len() > 10);
-    }
-
-    #[test]
-    fn test_pat_required() {
-        let bad_api = API::from_token("invalid_token");
-        // get_pat() gets my token from the environment
-        // Only for testing, token should be passed into
-        // API::from_token()
-        let good_api = API::from_token(get_pat());
-        
+    fn test_get_me() {
+        let client = API::from_token(get_pat());
         let url = format!("{}/users/me", BASE_URL);
-
-        let bad_resp = bad_api.get(&url).unwrap();
-        let good_resp = good_api.get(&url).unwrap();
-
-        assert!(bad_resp.text().unwrap().contains("errors"));
-        assert!(good_resp.text().unwrap().contains("email"));
-
+        let resp = client.get(&url).expect("Couldn't perform request");
+        match resp {
+            AsanaResponse::User(user) => {
+                assert!(user.name.len() > 1);
+            },
+            _ => assert!(false)
+        }
     }
 }

@@ -3,65 +3,67 @@
 /// https://developers.asana.com/docs/schemas
 use serde::Deserialize;
 
+
+#[derive(Deserialize)]
 pub enum AsanaResponse {
     Errors(Errors),
     AsanaNamedResource(AsanaNamedResource),
     AsanaResource(AsanaResource),
     Workspace(Workspace),
-    User(User)
+    User(User),
 }
 
 #[derive(Deserialize)]
 pub struct AsanaNamedResource {
-    gid: String,
-    resource_type: String,
-    name: String,
+    pub gid: String,
+    pub resource_type: String,
+    pub name: String,
 }
 
 #[derive(Deserialize)]
 pub struct AsanaResource {
-    gid: String,
-    resource_type: String,
+    pub gid: String,
+    pub resource_type: String,
 }
 
 #[derive(Deserialize)]
 pub struct Error {
-    help: Option<String>,
-    message: Option<String>,
-    phrase: Option<String>
+    pub help: Option<String>,
+    pub message: Option<String>,
+    pub phrase: Option<String>,
 }
 
 #[derive(Deserialize)]
 pub struct Errors {
-    errors: Vec<Error>
+    pub errors: Vec<Error>,
 }
 
 #[derive(Deserialize)]
 pub struct Workspace {
-    gid: String,
-    resource_type: String,
-    name: String,
-    email_domains: Option<Vec<String>>,
-    is_organization: Option<bool>
+    pub gid: String,
+    pub resource_type: String,
+    pub name: String,
+    pub email_domains: Option<Vec<String>>,
+    pub is_organization: Option<bool>,
 }
 
 #[derive(Deserialize)]
 pub struct Photo {
-    image_128x128: String,
-    image_21x21: String,
-    image_27x27: String,
-    image_36x36: String,
-    image_60x60: String,
+    pub image_128x128: String,
+    pub image_21x21: String,
+    pub image_27x27: String,
+    pub image_36x36: String,
+    pub image_60x60: String,
 }
 
 #[derive(Deserialize)]
 pub struct User {
-    gid: String,
-    resource_type: String,
-    name: String,
-    email: String,
-    photo: Option<Photo>,
-    workspaces: Vec<Workspace>
+    pub gid: String,
+    pub resource_type: String,
+    pub name: String,
+    pub email: String,
+    pub photo: Option<Photo>,
+    pub workspaces: Vec<Workspace>,
 }
 
 #[cfg(test)]
@@ -135,7 +137,6 @@ mod tests {
             ]
           }"#;
 
-
         let user: User = serde_json::from_str(raw).unwrap();
         assert_eq!(user.name, "Greg Sanchez");
         assert_eq!(user.gid, "12345");
@@ -161,6 +162,4 @@ mod tests {
         assert!(errors.errors[0].message.is_some());
         assert!(errors.errors[0].phrase.is_some());
     }
-
-
 }
