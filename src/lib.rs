@@ -4,7 +4,7 @@ extern crate reqwest;
 
 
 pub mod api;
-pub mod resources;
+pub mod schema;
 
 // Dev helper
 // This gets the personal access token from .token in the crate root

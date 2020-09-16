@@ -66,10 +66,10 @@ mod tests {
         // API::from_token()
         let good_api = API::from_token(get_pat());
         
-        let url = "https://app.asana.com/api/1.0/users/me";
+        let url = format!("{}/users/me", BASE_URL);
 
-        let bad_resp = bad_api.get(url).unwrap();
-        let good_resp = good_api.get(url).unwrap();
+        let bad_resp = bad_api.get(&url).unwrap();
+        let good_resp = good_api.get(&url).unwrap();
 
         assert!(bad_resp.text().unwrap().contains("errors"));
         assert!(good_resp.text().unwrap().contains("email"));
