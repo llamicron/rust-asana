@@ -4,11 +4,13 @@ use reqwest::blocking::{Client, Response};
 
 type AccessToken = String;
 
+pub const BASE_URL: &'static str = "https://app.asana.com/api/1.0";
+
 /// This handles interactions with the Asana API.
 /// 
 /// It posts payloads to the API and returns the result. It also handles
 /// authentication through a Personal Access Token (PAT)
-struct API {
+pub struct API {
     client: Client,
     pat: AccessToken
 }
