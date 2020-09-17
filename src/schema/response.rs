@@ -36,7 +36,18 @@ impl Response {
     }
 
     pub fn values<T: DeserializeOwned>(&self) -> Option<Vec<T>> {
-        serde_json::from_value::<Vec<T>>(self.data.clone()).ok()
+        // If we can get a vector from it, then do that
+        if let Ok(values) = serde_json::from_value::<Vec<T>>(self.data.clone()) {
+            return Some(values);
+        }
+
+        // Otherwise, if we can get a single value...
+        if let Some(value) = self.value::<T>() {
+            // ...then return a vector with that value
+            return Some(vec![value]);
+        }
+
+        return None;
     }
 }
 
@@ -141,6 +152,46 @@ mod tests {
         let resp = serde_json::from_str::<Response>(payload).unwrap();
         if let Some(user) = resp.value::<schema::UserCompact>() {
             assert_eq!(user.name, "Greg Sanchez");
+        } else {
+            assert!(false);
+        }
+        assert!(resp.errors().is_none());
+    }
+
+    #[test]
+    fn test_get_vector_values() {
+        let payload = test_vector_resp();
+        let resp = serde_json::from_str::<Response>(payload).unwrap();
+        if let Some(users) = resp.values::<schema::UserCompact>() {
+            assert_eq!(users.len(), 2);
+            assert_eq!(users[0].name, "Greg Sanchez");
+        } else {
+            assert!(false);
+        }
+        assert!(resp.errors().is_none());
+    }
+
+    #[test]
+    fn test_get_errors() {
+        let payload = test_error_resp();
+        let resp = serde_json::from_str::<Response>(payload).unwrap();
+        assert!(resp.values::<schema::UserCompact>().is_none());
+        if let Some(errors) = resp.errors() {
+            assert_eq!(errors.len(), 1);
+        } else {
+            assert!(false);
+        }
+    }
+
+    #[test]
+    fn test_value_to_values() {
+        // This returns a single value, not a vector
+        let payload = test_value_resp();
+        let resp = serde_json::from_str::<Response>(payload).unwrap();
+        // I want resp.values() to convert to a vector of one item
+        if let Some(users) = resp.values::<schema::UserCompact>() {
+            assert_eq!(users.len(), 1);
+            assert_eq!(users[0].name, "Greg Sanchez");
         } else {
             assert!(false);
         }
