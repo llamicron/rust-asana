@@ -1,6 +1,7 @@
 #![allow(unused)]
 
 pub mod response;
+pub use response::Response;
 
 /// https://developers.asana.com/docs/schemas
 use serde::{Deserialize, de::DeserializeOwned};

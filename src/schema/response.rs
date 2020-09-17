@@ -3,6 +3,14 @@ use serde_json::Value;
 
 use crate::schema;
 
+/// Represents a response from Asana
+///
+/// This is a JSON object that could have 2 (or more idk) keys: "data" or "errors". You can
+/// deserialize a payload from the Asana API into one of these.
+///
+/// You can use `value()` or `values()` to get the data returned by Asana, serialized into one
+/// of the structs in the [`schema`](crate::schema) module. You can use `errors()` to return a
+/// vector of `schema::Error`s.
 #[derive(Deserialize)]
 pub struct Response {
     #[serde(default)]
@@ -12,6 +20,8 @@ pub struct Response {
 }
 
 impl Response {
+    /// Consumes the response, returning `Ok()` with the type provided or
+    /// `Err()` with a vector of `schema::Error`s.
     pub fn into<T: DeserializeOwned>(self) -> Result<T, Vec<schema::Error>> {
         if self.errors.len() > 0 {
             return Err(self.errors);
@@ -23,6 +33,27 @@ impl Response {
         }
     }
 
+    /// Returns the single value of type T. If Asana returns an array of objects,
+    /// this will return None. See `values()`.
+    ///
+    /// ```rust
+    /// use rust_asana::Response;
+    /// use rust_asana::schema::UserCompact;
+    ///
+    /// // This is UserCompact object, defined by Asana
+    /// let payload = r#"{
+    ///     "data": {
+    ///         "gid": "12345",
+    ///         "resource_type": "user",
+    ///         "name": "Greg Sanchez"
+    ///     }
+    /// }"#;
+    ///
+    /// let resp = serde_json::from_str::<Response>(&payload).unwrap();
+    /// let user = resp.value::<UserCompact>();
+    /// assert!(user.is_some());
+    /// assert_eq!(user.unwrap().name, "Greg Sanchez");
+    /// ```
     pub fn value<T: DeserializeOwned>(&self) -> Option<T> {
         serde_json::from_value::<T>(self.data.clone()).ok()
     }
@@ -35,6 +66,38 @@ impl Response {
         }
     }
 
+    /// This is the same as `value()`, but it returns a vector of values. Some requests
+    /// from Asana return an array of values, which this is meant for.
+    ///
+    /// **Important Note**: This methid *will work* on a payload of only one object. It
+    /// will convert it to a vector of one item. As long as there is serializable data in the
+    /// `data` field of the payload, this will return the object(s).
+    ///
+    /// ```rust
+    /// use rust_asana::Response;
+    /// use rust_asana::schema::UserCompact;
+    ///
+    /// // This is UserCompact object, defined by Asana
+    /// let payload = r#"{
+    ///     "data": [
+    ///         {
+    ///             "gid": "12345",
+    ///             "resource_type": "user",
+    ///             "name": "Greg Sanchez"
+    ///         },
+    ///         {
+    ///             "gid": "54321",
+    ///             "resource_type": "user",
+    ///             "name": "Luke Lastname"
+    ///         }
+    ///     ]
+    /// }"#;
+    ///
+    /// let resp = serde_json::from_str::<Response>(&payload).unwrap();
+    /// let user = resp.values::<UserCompact>();
+    /// assert!(user.is_some());
+    /// assert_eq!(user.unwrap()[0].name, "Greg Sanchez");
+    /// ```
     pub fn values<T: DeserializeOwned>(&self) -> Option<Vec<T>> {
         // If we can get a vector from it, then do that
         if let Ok(values) = serde_json::from_value::<Vec<T>>(self.data.clone()) {

@@ -7,6 +7,8 @@ extern crate reqwest;
 pub mod api;
 pub mod schema;
 
+pub use schema::Response;
+
 // Dev helper
 // This gets the personal access token from .token in the crate root
 #[cfg(test)]
