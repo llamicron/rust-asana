@@ -9,6 +9,6 @@ pub mod schema;
 // Dev helper
 // This gets the personal access token from .token in the crate root
 fn get_pat() -> String {
-    let token = std::fs::read_to_string(".token").unwrap();
+    let token = std::fs::read_to_string(".token").expect(".token file probably isn't present");
     token.trim().to_string()
 }

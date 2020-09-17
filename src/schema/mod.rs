@@ -3,14 +3,14 @@
 /// https://developers.asana.com/docs/schemas
 use serde::Deserialize;
 
+#[derive(Deserialize)]
+pub struct Payload<T> {
+    data: T
+}
 
 #[derive(Deserialize)]
-pub enum AsanaResponse {
-    Errors(Errors),
-    AsanaNamedResource(AsanaNamedResource),
-    AsanaResource(AsanaResource),
-    Workspace(Workspace),
-    User(User),
+pub struct VectorPayload<T> {
+    data: Vec<T>
 }
 
 #[derive(Deserialize)]
@@ -69,6 +69,43 @@ pub struct User {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_payload() {
+        let raw = r#"{
+            "data": {
+                "gid": "12345",
+                "resource_type": "task",
+                "name": "Bug Task"
+            }
+        }"#;
+
+        let resource = serde_json::from_str::<Payload<AsanaNamedResource>>(raw).unwrap().data;
+        assert_eq!(resource.resource_type, "task");
+    }
+
+    #[test]
+    fn test_vector_payload() {
+        let raw = r#"{
+            "data": [
+                {
+                    "gid": "12345",
+                    "resource_type": "task",
+                    "name": "Bug Task"
+                },
+                {
+                    "gid": "54321",
+                    "resource_type": "task",
+                    "name": "Bug Task 2"
+                }
+            ]
+        }"#;
+
+        let resources = serde_json::from_str::<VectorPayload<AsanaNamedResource>>(raw).unwrap().data;
+        assert_eq!(resources.len(), 2);
+        assert_eq!(resources[0].name, "Bug Task");
+        assert_eq!(resources[1].name, "Bug Task 2");
+    }
 
     #[test]
     fn test_asana_named_resource() {
