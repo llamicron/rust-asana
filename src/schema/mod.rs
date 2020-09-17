@@ -1,33 +1,10 @@
 #![allow(unused)]
 
+pub mod response;
+
 /// https://developers.asana.com/docs/schemas
 use serde::{Deserialize, de::DeserializeOwned};
 use serde_json::Value;
-
-#[derive(Deserialize, Debug)]
-pub struct Payload<T> {
-    pub data: Response<T>
-}
-
-impl<T: DeserializeOwned> Payload<T> {
-    fn from_str(s: &str) -> Result<Payload<T>, Payload<Error>> {
-        match serde_json::from_str::<Self>(&s) {
-            Ok(value) => return Ok(value),
-            Err(err) => {
-                return Err(
-                    serde_json::from_str::<Payload<Error>>(&s).expect("Couldn't parse value or error from asana payload")
-                )
-            }
-        };
-    }
-}
-
-#[derive(Deserialize, Debug)]
-#[serde(untagged)]
-pub enum Response<T> {
-    Value(T),
-    Vector(Vec<T>)
-}
 
 #[derive(Deserialize, Debug)]
 pub struct AsanaNamedResource {
@@ -42,7 +19,7 @@ pub struct AsanaResource {
     pub resource_type: String,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Error {
     pub help: Option<String>,
     pub message: Option<String>,
@@ -82,108 +59,16 @@ pub struct User {
     pub workspaces: Vec<Workspace>,
 }
 
+#[derive(Deserialize, Debug)]
+pub struct UserCompact {
+    pub gid: String,
+    pub resource_type: String,
+    pub name: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-
-
-    #[test]
-    fn test_single_generic_asana_payload() {
-        let raw = r#"{
-        "data": {
-            "gid": "12345",
-            "resource_type": "user",
-            "name": "Greg Sanchez",
-            "email": "gsanchez@example.com",
-            "photo": {
-                "image_128x128": "https://...",
-                "image_21x21": "https://...",
-                "image_27x27": "https://...",
-                "image_36x36": "https://...",
-                "image_60x60": "https://..."
-            },
-            "workspaces": [
-                {
-                "gid": "12345",
-                "resource_type": "workspace",
-                "name": "My Company Workspace"
-                }
-            ]
-        }}"#;
-
-        let response = serde_json::from_str::<Payload<User>>(raw).unwrap();
-        match response.data {
-            Response::Value(user) => {
-                assert_eq!(user.name, "Greg Sanchez");
-                assert_eq!(user.resource_type, "user");
-                assert_eq!(user.gid, "12345");
-            },
-            _ => assert!(false)
-        }
-    }
-
-    #[test]
-    fn test_vector_generic_asana_payload() {
-        let raw = r#"{
-        "data": [{
-            "gid": "12345",
-            "resource_type": "user",
-            "name": "Greg Sanchez",
-            "email": "gsanchez@example.com",
-            "photo": {
-                "image_128x128": "https://...",
-                "image_21x21": "https://...",
-                "image_27x27": "https://...",
-                "image_36x36": "https://...",
-                "image_60x60": "https://..."
-            },
-            "workspaces": [
-                {
-                "gid": "12345",
-                "resource_type": "workspace",
-                "name": "My Company Workspace"
-                }
-            ]
-        }]}"#;
-
-        let response = serde_json::from_str::<Payload<User>>(raw).unwrap();
-        match response.data {
-            Response::Vector(users) => {
-                assert_eq!(users.len(), 1);
-                assert_eq!(users[0].name, "Greg Sanchez");
-                assert_eq!(users[0].resource_type, "user");
-                assert_eq!(users[0].gid, "12345");
-            },
-            _ => assert!(false)
-        }
-    }
-
-    #[test]
-    fn test_payload_from_str() {
-        let raw = r#"{
-            "data": {
-                "gid": "12345",
-                "resource_type": "task",
-                "name": "Bug Task"
-            }
-        }"#;
-        let raw_error = r#"{
-            "data": {
-                "gid": "12345",
-                "resource_type": "task",
-                "name": "Bug Task"
-            }
-        }"#;
-
-        let payload = Payload::<AsanaNamedResource>::from_str(raw).unwrap();
-        match payload.data {
-            Response::Value(resource) => {
-                assert_eq!(resource.resource_type, "task");
-            },
-            _ => assert!(false)
-        }
-
-    }
 
     #[test]
     fn test_asana_named_resource() {
