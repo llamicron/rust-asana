@@ -2,15 +2,18 @@
 
 /// https://developers.asana.com/docs/schemas
 use serde::Deserialize;
+use serde_json::Value;
 
 #[derive(Deserialize)]
-pub struct Payload<T> {
-    data: T
+pub struct Payload {
+    pub data: Value
 }
 
 #[derive(Deserialize)]
-pub struct VectorPayload<T> {
-    data: Vec<T>
+#[serde(untagged)]
+pub enum Response {
+    Value(serde_json::Value),
+    Vector(Vec<serde_json::Value>)
 }
 
 #[derive(Deserialize)]
@@ -70,41 +73,42 @@ pub struct User {
 mod tests {
     use super::*;
 
+
     #[test]
-    fn test_payload() {
+    fn test_single_generic_asana_payload() {
         let raw = r#"{
-            "data": {
+        "data": {
+            "gid": "12345",
+            "resource_type": "user",
+            "name": "Greg Sanchez",
+            "email": "gsanchez@example.com",
+            "photo": {
+                "image_128x128": "https://...",
+                "image_21x21": "https://...",
+                "image_27x27": "https://...",
+                "image_36x36": "https://...",
+                "image_60x60": "https://..."
+            },
+            "workspaces": [
+                {
                 "gid": "12345",
-                "resource_type": "task",
-                "name": "Bug Task"
-            }
-        }"#;
-
-        let resource = serde_json::from_str::<Payload<AsanaNamedResource>>(raw).unwrap().data;
-        assert_eq!(resource.resource_type, "task");
-    }
-
-    #[test]
-    fn test_vector_payload() {
-        let raw = r#"{
-            "data": [
-                {
-                    "gid": "12345",
-                    "resource_type": "task",
-                    "name": "Bug Task"
-                },
-                {
-                    "gid": "54321",
-                    "resource_type": "task",
-                    "name": "Bug Task 2"
+                "resource_type": "workspace",
+                "name": "My Company Workspace"
                 }
             ]
-        }"#;
+        }}"#;
 
-        let resources = serde_json::from_str::<VectorPayload<AsanaNamedResource>>(raw).unwrap().data;
-        assert_eq!(resources.len(), 2);
-        assert_eq!(resources[0].name, "Bug Task");
-        assert_eq!(resources[1].name, "Bug Task 2");
+        let response = serde_json::from_str::<Payload>(raw).unwrap();
+        let data = serde_json::from_value::<Response>(response.data).unwrap();
+        match data {
+            Response::Value(user_value) => {
+                let user = serde_json::from_value::<User>(user_value).unwrap();
+                assert_eq!(user.name, "Greg Sanchez");
+                assert_eq!(user.resource_type, "user");
+                assert_eq!(user.gid, "12345");
+            },
+            Response::Vector(users_value) => assert!(false)
+        }
     }
 
     #[test]

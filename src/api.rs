@@ -1,6 +1,9 @@
 /// Interact with the Asana API
 
 use reqwest::blocking::{Client};
+use serde::de::DeserializeOwned;
+
+use crate::schema;
 
 type AccessToken = String;
 
@@ -30,18 +33,17 @@ impl API {
     }
 
     // Just makes a get request with the PAT and returns the result
-    // pub fn get<S: AsRef<str>>(&self, url: S) -> Result<AsanaResponse, reqwest::Error> {
-    //     let resp = self.client
-    //         .get(url.as_ref())
-    //         .bearer_auth(&self.pat)
-    //         .send()?;
+    pub fn get<S: AsRef<str>>(&self, url: S) -> Result<schema::Response, reqwest::Error> {
+        let resp = self.client
+            .get(url.as_ref())
+            .bearer_auth(&self.pat)
+            .send()?;
 
-    //     // This isn't working :(
-    //     // let text = resp.text()?;
-    //     // let asana_resp = serde_json::from_str::<AsanaResponseWrapper>(&text).expect("Couldn't get asana resp");
-    //     // Ok(asana_resp.data)
-    //     unimplemented!();
-    // }
+        // This isn't working :(
+        let text = resp.text()?;
+
+        unimplemented!();
+    }
 }
 
 
