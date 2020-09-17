@@ -58,6 +58,7 @@ impl Response {
         serde_json::from_value::<T>(self.data.clone()).ok()
     }
 
+    /// Same as `values()`, but returns the Asana errors (always a vector).
     pub fn errors(&self) -> Option<Vec<schema::Error>> {
         if self.errors.len() > 0 {
             return Some(self.errors.clone());
@@ -99,18 +100,11 @@ impl Response {
     /// assert_eq!(user.unwrap()[0].name, "Greg Sanchez");
     /// ```
     pub fn values<T: DeserializeOwned>(&self) -> Option<Vec<T>> {
-        // If we can get a vector from it, then do that
-        if let Ok(values) = serde_json::from_value::<Vec<T>>(self.data.clone()) {
-            return Some(values);
-        }
-
-        // Otherwise, if we can get a single value...
         if let Some(value) = self.value::<T>() {
-            // ...then return a vector with that value
-            return Some(vec![value]);
+            Some(vec![value])
+        } else {
+            serde_json::from_value::<Vec<T>>(self.data.clone()).ok()
         }
-
-        return None;
     }
 }
 
