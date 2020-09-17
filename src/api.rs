@@ -33,17 +33,17 @@ impl API {
     }
 
     // Just makes a get request with the PAT and returns the result
-    pub fn get<S: AsRef<str>>(&self, url: S) -> Result<schema::Response, reqwest::Error> {
-        let resp = self.client
-            .get(url.as_ref())
-            .bearer_auth(&self.pat)
-            .send()?;
+    // pub fn get<S: AsRef<str>>(&self, url: S) -> Result<schema::Response, reqwest::Error> {
+    //     let resp = self.client
+    //         .get(url.as_ref())
+    //         .bearer_auth(&self.pat)
+    //         .send()?;
 
-        // This isn't working :(
-        let text = resp.text()?;
+    //     // This isn't working :(
+    //     let text = resp.text()?;
 
-        unimplemented!();
-    }
+    //     unimplemented!();
+    // }
 }
 
 
