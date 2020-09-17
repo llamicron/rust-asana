@@ -74,6 +74,8 @@ impl Response {
     /// will convert it to a vector of one item. As long as there is serializable data in the
     /// `data` field of the payload, this will return the object(s).
     ///
+    /// If the response is an empty array, this will return Some([]), not None
+    ///
     /// ```rust
     /// use rust_asana::Response;
     /// use rust_asana::schema::UserCompact;
@@ -252,5 +254,14 @@ mod tests {
         } else {
             assert!(false);
         }
+    }
+
+    #[test]
+    fn test_empty_return_vector() {
+        let payload = r#"{ "data": [] }"#;
+        let resp = serde_json::from_str::<Response>(payload).unwrap();
+        let items = resp.values::<schema::UserCompact>();
+        assert!(items.is_some());
+        assert_eq!(items.unwrap().len(), 0);
     }
 }
