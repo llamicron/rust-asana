@@ -11,7 +11,7 @@ use crate::schema;
 /// You can use `value()` or `values()` to get the data returned by Asana, serialized into one
 /// of the structs in the [`schema`](crate::schema) module. You can use `errors()` to return a
 /// vector of `schema::Error`s.
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct Response {
     #[serde(default)]
     pub data: serde_json::Value,

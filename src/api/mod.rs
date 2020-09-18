@@ -1,13 +1,14 @@
 /// Interact with the Asana API
 
+mod users;
+
 use reqwest::blocking::{Client};
 use serde::de::DeserializeOwned;
 
 use crate::schema;
+use crate::BASE_URL;
 
 type AccessToken = String;
-
-pub const BASE_URL: &'static str = "https://app.asana.com/api/1.0";
 
 /// This handles interactions with the Asana API.
 ///
@@ -15,7 +16,8 @@ pub const BASE_URL: &'static str = "https://app.asana.com/api/1.0";
 /// authentication through a Personal Access Token (PAT)
 pub struct API {
     client: Client,
-    pat: AccessToken
+    pat: AccessToken,
+    url: String
 }
 
 impl API {
@@ -23,7 +25,8 @@ impl API {
     pub fn from_token<S: AsRef<str>>(token: S) -> Self {
         API {
             client: Client::new(),
-            pat: String::from(token.as_ref())
+            pat: String::from(token.as_ref()),
+            url: String::from(BASE_URL)
         }
     }
 
@@ -32,14 +35,24 @@ impl API {
         &self.pat
     }
 
-    pub fn get<S: AsRef<str>>(&self, url: S) -> Result<schema::Response, Box<dyn std::error::Error>> {
+    /// Adds a url segment to the url
+    pub fn request<S: AsRef<str>>(&mut self, url: S) -> &mut Self {
+        self.url += url.as_ref();
+        self
+    }
+
+    /// Executes the request
+    pub fn get(&mut self) -> Result<schema::Response, Box<dyn std::error::Error>> {
         let resp = self.client
-            .get(url.as_ref())
+            .get(&self.url)
             .bearer_auth(&self.pat)
             .send()?;
 
         let text = resp.text()?;
         let resp = serde_json::from_str::<schema::Response>(&text)?;
+
+        // Reset the url
+        self.url = format!("{}", BASE_URL);
         return Ok(resp);
     }
 }
@@ -54,5 +67,14 @@ mod tests {
     fn new_api_with_token() {
         let api = API::from_token("my token");
         assert_eq!(api.token(), "my token");
+    }
+
+    #[test]
+    fn test_get_me() {
+        let mut asana = API::from_token(get_pat());
+        let resp = asana.request( users::me() ).get().expect("Couldn't perform request");
+        let user = resp.value::<schema::User>();
+        assert!(user.is_some());
+        assert_eq!(user.unwrap().resource_type, "user");
     }
 }
