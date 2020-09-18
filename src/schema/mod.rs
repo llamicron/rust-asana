@@ -4,7 +4,7 @@ pub mod response;
 pub use response::Response;
 
 /// https://developers.asana.com/docs/schemas
-use serde::{Deserialize, de::DeserializeOwned};
+use serde::{de::DeserializeOwned, Deserialize};
 use serde_json::Value;
 
 #[derive(Deserialize, Debug)]
@@ -20,7 +20,7 @@ pub struct AsanaResource {
     pub resource_type: String,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 pub struct Error {
     pub help: Option<String>,
     pub message: Option<String>,

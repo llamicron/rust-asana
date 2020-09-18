@@ -11,7 +11,8 @@ pub mod schema;
 pub use schema::Response;
 pub use api::API;
 
-pub const BASE_URL: &'static str = "https://app.asana.com/api/1.0";
+pub const BASE_URL: &'static str = "https://app.asana.com";
+pub const BASE_API: &'static str = "/api/1.0";
 
 // Dev helper
 // This gets the personal access token from .token in the crate root

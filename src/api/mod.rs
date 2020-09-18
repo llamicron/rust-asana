@@ -1,14 +1,16 @@
 /// Interact with the Asana API
-
 mod users;
+
+use url::Url;
 
 use reqwest::blocking::{Client};
 use serde::de::DeserializeOwned;
 
 use crate::schema;
-use crate::BASE_URL;
+use crate::{BASE_URL, BASE_API};
 
 type AccessToken = String;
+
 
 /// This handles interactions with the Asana API.
 ///
@@ -17,7 +19,7 @@ type AccessToken = String;
 pub struct API {
     client: Client,
     pat: AccessToken,
-    url: String
+    url: Url
 }
 
 impl API {
@@ -26,8 +28,13 @@ impl API {
         API {
             client: Client::new(),
             pat: String::from(token.as_ref()),
-            url: String::from(BASE_URL)
+            url: Url::parse(BASE_URL).unwrap()
         }
+    }
+
+    fn query(&mut self, name: &str, value: &str) -> &mut Self {
+        self.url.query_pairs_mut().append_pair(name, value);
+        self
     }
 
     /// Returns the token provided when the API struct was created
@@ -35,16 +42,20 @@ impl API {
         &self.pat
     }
 
-    /// Adds a url segment to the url
+    /// Sets the path of the url
     pub fn request<S: AsRef<str>>(&mut self, url: S) -> &mut Self {
-        self.url += url.as_ref();
+        let uri = format!("{}{}", BASE_API, url.as_ref());
+        self.url = self.url.join(&uri).expect(
+            &format!("Not a valid url path: {}", url.as_ref())
+        );
         self
     }
+
 
     /// Executes the request
     pub fn get(&mut self) -> Result<schema::Response, Box<dyn std::error::Error>> {
         let resp = self.client
-            .get(&self.url)
+            .get(self.url.as_str())
             .bearer_auth(&self.pat)
             .send()?;
 
@@ -52,7 +63,6 @@ impl API {
         let resp = serde_json::from_str::<schema::Response>(&text)?;
 
         // Reset the url
-        self.url = format!("{}", BASE_URL);
         return Ok(resp);
     }
 }
@@ -62,19 +72,11 @@ impl API {
 mod tests {
     use super::*;
     use crate::get_pat;
+    use url::Url;
 
     #[test]
     fn new_api_with_token() {
         let api = API::from_token("my token");
         assert_eq!(api.token(), "my token");
-    }
-
-    #[test]
-    fn test_get_me() {
-        let mut asana = API::from_token(get_pat());
-        let resp = asana.request( users::me() ).get().expect("Couldn't perform request");
-        let user = resp.value::<schema::User>();
-        assert!(user.is_some());
-        assert_eq!(user.unwrap().resource_type, "user");
     }
 }
